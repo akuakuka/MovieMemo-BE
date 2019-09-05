@@ -13,15 +13,17 @@ OmdbRouter.get('/movies/search/:searchterm', async (request, response, next) => 
     try {
         const result = await axios.get(url);
         console.log(result.data.Search)
+        response.send(result.data.Search)
     } catch (e) {
         console.log(e)
+        response.send(e)
     }
-    response.send("öalj")
+
 })
 OmdbRouter.get('/movies/', async (request, response, next) => {
-    const movieID = request.params.movieID;
     const userID = request.user._id;
    const user = await User.findById(userID).populate('movies')
+   console.log(user.movies)
    response.json(user.movies)
 })
 OmdbRouter.delete('/movies/:movieID', async (request, response, next) => {
