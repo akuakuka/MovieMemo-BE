@@ -115,9 +115,15 @@ app.get("/login", (req, res) => {
   console.log(req.sessionID);
   res.send("You got to the loginpage");
 });
+app.get("/logout", (req, res) => {
+  console.log("LOGOUT");
+  req.session.destroy(function(err) {
+    res.redirect("/"); //Inside a callback… bulletproof!
+  });
+});
 app.get("/authrequired", (req, res) => {
   if (req.isAuthenticated()) {
-    res.send("you hit the authentication endpoint\n");
+    res.send("you hit the authentication endpoint");
   } else {
     res.redirect("/");
   }

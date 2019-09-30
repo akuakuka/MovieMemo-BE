@@ -11,13 +11,32 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-    movies: [
+    toWatch: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Movie"
       }
+    ],
+    watched: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Movie"
+      }
+    ],
+    groups: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Group"
+      }
+    ],
+    groupJoinRequests: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Group"
+      }
     ]
   },
+
   { timestamps: true }
 );
 
