@@ -12,6 +12,18 @@ const groupSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
       }
+    ],
+    toWatch: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Movie"
+      }
+    ],
+    watched: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Movie"
+      }
     ]
   },
   { timestamps: true }

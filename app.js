@@ -12,8 +12,9 @@ const omdbrouter = require("./controllers/Omdb");
 const UsersRouter = require("./controllers/Users");
 dotenv.config();
 const PORT = process.env.PORT;
-
-let GoogleStrategy = require("passport-google-oauth").OAuth2Strategy;
+const bcrypt = require("bcrypt");
+const GoogleStrategy = require("passport-google-oauth").OAuth2Strategy;
+const LocalStrategy = require("passport-local");
 
 let store = new MongoDBStore({
   uri: process.env.MONGO_URL,
@@ -64,7 +65,59 @@ const ensureAuthenticated = async (req, res, next) => {
 app.get("/", (req, res) => {
   res.send("root");
 });
-
+app.post("/api/users/localregister/", async (req, res) => {
+  const email = req.body.email;
+  const username = req.body.username;
+  console.log(req.body);
+  console.log(username);
+  if (User.findOne({ email: email }) === null) {
+    console.log("MAIL TAKEN");
+    res.send(`Email ${email} already taken`);
+  } else {
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    console.log(hashedPassword);
+    console.log("Creating new User");
+    let user = await new User({
+      displayName: username,
+      email: email,
+      password: hashedPassword
+    }).save();
+    res.send(user);
+  }
+});
+app.post("/api/users/locallogin", async (req, res) => {
+  console.log(req.body);
+  let user = await User.findOne({
+    displayName: req.body.username
+  }).find.populate("groups");
+  if (user === null) {
+    res.send("User not found");
+  } else {
+    if (await bcrypt.compare(req.body.password, user.password)) {
+      console.log("PASSMATCH");
+      res.json(user);
+    } else {
+      console.log("Wrong pw");
+      res.send("wrond pw");
+    }
+  }
+});
+passport.use(
+  new LocalStrategy(async (username, password, done) => {
+    User.findOne({ username: username }, (err, user) => {
+      if (err) {
+        return done(err);
+      }
+      if (!user) {
+        return done(null, false);
+      }
+      if (!user.verifyPassword(password)) {
+        return done(null, false);
+      }
+      return done(null, user);
+    });
+  })
+);
 passport.use(
   new GoogleStrategy(
     {
@@ -74,7 +127,6 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, cb) => {
       User.findOne({ googleId: profile.id }).then(user => {
-        console.log(profile);
         if (user) {
           console.log(`User ${user.id} logged in!`);
           cb(null, user);
@@ -82,7 +134,8 @@ passport.use(
           console.log("Creating new User");
           new User({
             googleId: profile.id,
-            displayName: profile.displayName
+            displayName: profile.displayName,
+            email: profile._json.email
           })
             .save()
             .then(user => {
@@ -104,19 +157,15 @@ app.get(
 app.get(
   "/auth/google/callback",
   passport.authenticate("google", { failureRedirect: "/login" }),
-  function(req, res) {
-    console.log(req.sessionID);
-    res.redirect("http://localhost:3000");
+  (req, res) => {
+    res.redirect("http://localhost:3000/GoogleAuthRedirect");
   }
 );
 
 app.get("/login", (req, res) => {
-  console.log("LOGIN!");
-  console.log(req.sessionID);
   res.send("You got to the loginpage");
 });
 app.get("/logout", (req, res) => {
-  console.log("LOGOUT");
   req.session.destroy(function(err) {
     res.redirect("/"); //Inside a callback… bulletproof!
   });

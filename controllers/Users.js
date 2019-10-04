@@ -12,7 +12,6 @@ UsersRouter.get("/search/:searchterm", async (request, response, next) => {
     const result = await User.find({
       displayName: { $regex: searchterm, $options: "i" }
     }).limit(5);
-    console.log(result);
     response.send(result);
   } catch (e) {
     console.log(e);
@@ -23,12 +22,6 @@ UsersRouter.get(
   "/friendrequest/:requesteeid",
   async (request, response, next) => {
     console.log(request.user);
-    // new User({
-    //     googleId: profile.id,
-    //     displayName: profile.displayName
-    //   })
-    //     .save()
-    //     .then(user =>
     try {
       new friendrequest({
         requestor: request.user._id,
@@ -78,6 +71,17 @@ UsersRouter.get("/friendrequest/", async (request, response, next) => {
     response.send(e);
   }
 });
+UsersRouter.get("/getme/", async (request, response, next) => {
+  console.log("GETME");
+  console.log(request);
+  try {
+    let user = await User.findById(request.user._id).populate("groups");
+    response.send(user);
+  } catch (e) {
+    console.log(e);
+    response.send(e);
+  }
+});
 UsersRouter.get("/group/", async (request, response, next) => {
   try {
     const userID = request.user._id;
@@ -101,7 +105,13 @@ UsersRouter.post("/group/:name", async (request, response, next) => {
         Users: [request.user._id]
       }
     ).then(async result => {
-      console.log(result.doc);
+      const userID = request.user._id;
+      console.log(result);
+
+      let user = await User.findById(userID);
+      //a = {...a, ...theNewPropertiesToAdd};
+      user.groups = [...user.groups, result.doc._id];
+      await user.save();
       response.send(result.doc);
     });
   } catch (e) {
